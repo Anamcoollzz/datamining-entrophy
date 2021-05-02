@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Datamining 11 B</title>
+	<link rel="stylesheet" href="css/bootstrap.min.css">
+</head>
+<body>
+	<h1>Kelompok 11 B</h1>
+	<h3>Dataset Pegawai BPJS (Dummy)</h3>
+	<table class="table table-bordered table-striped" id="dataset_table">
+		<thead>
+			<tr>
+				<th>#</th>
+				<th>Nama</th>
+				<th>Jenis Kelamin</th>
+				<th>Umur</th>
+				<th>Status Nikah</th>
+				<th>Gaji Pokok</th>
+				<th>Keloyalan</th>
+			</tr>
+		</thead>
+		<tbody></tbody>
+	</table>
+	<script src="js/jquery-3.4.1.min.js"></script>
+	<script src="js/lodash.js"></script>
+	<script src="data.js"></script>
+	<script>
+		function hitungEntrohy(proporsi_ke_i){
+			var hasilEntro = 0;
+			for(var pi of proporsi_ke_i){
+				hasilEntro += (-pi) * Math.log2(pi)
+			}
+			return hasilEntro;
+		}
+		function hitungS1(data){
+			return _.filter(data, function(o){
+				if(o.keloyalan == 'Tidak Loyal'){
+					return o;
+				}
+			}).length;
+		}
+		function hitungGain(){
+
+		}
+		function setTemplate(tbody) {
+			return '<table class="table table-bordered table-striped"><thead><tr><th>Node</th><th>Atribut</th><th>Nilai Atribut</th><th>Jumlah Kasus (s)</th><th>Tidak Loyal (s1)</th><th>Loyal (s2)</th><th>Entrophy</th><th>Gain</th></tr></thead><tbody>'+tbody+'</tbody></table>'
+		}
+		var html_table = null;
+		var a = 1;
+		for (var i of data) {
+			html_table += '<tr>'+
+			'<td>'+a+'</td>'+
+			'<td>'+i.nama+'</td>'+
+			'<td>'+i.jenis_kelamin+'</td>'+
+			'<td>'+i.status_nikah+'</td>'+
+			'<td>'+i.umur+'</td>'+
+			'<td>'+i.gaji_pokok+'</td>'+
+			'<td>'+i.keloyalan+'</td>'+
+			'</tr>';
+			a++;
+		}
+		$('#dataset_table').find('tbody').html(html_table);
+		// Node 1
+		var s = data.length;
+		var s1 = hitungS1(data)
+		var s2 = data.length - s1
+		var p1 = s1/s;
+		var p2 = s2/s;
+		var entrophy_s = hitungEntrohy([p1,p2])
+		html_table = ''
+		html_table += '<tr>'+
+		'<td>1</td>'+
+		'<td>Total</td>'+
+		'<td></td>'+
+		'<td>'+data.length+'</td>'+
+		'<td>'+s1+'</td>'+
+		'<td>'+s2+'</td>'+
+		'<td>'+entrophy_s+'</td>'+
+		'<td></td>'+
+		'</tr>';
+		var atribut = [
+		{
+			"nama_atribut" : 'jenis_kelamin',
+			"nama_bebas" : 'Jenis Kelamin',
+			"data" : ["Laki-laki", "Perempuan"],
+		},
+		{
+			"nama_atribut" : 'umur',
+			"nama_bebas" : 'Umur',
+			"data" : ["21-30", "31-40", "41-50", "51-60"],
+		},
+		{
+			"nama_atribut" : 'gaji_pokok',
+			"nama_bebas" : 'Gaji Pokok',
+			"data" : ["2-3,99 juta", "4-5,99 juta", "6-7,99 juta", ">8 juta"],
+		},
+		{
+			"nama_atribut" : 'status_nikah',
+			"nama_bebas" : 'Status Nikah',
+			"data" : ["Bujang", "Nikah", "Janda/Duda"],
+		}
+		];
+		var s_parent = data.length
+		var entrophy_parent = entrophy_s
+		var kumpulan_gain = [];
+		for(var i of atribut){
+			var gain = 0;
+			var html_table2 = "";
+			for(var nilai_atribut of i.data){
+				var data2 = _.filter(data, function(o){
+					if(o[i.nama_atribut] == nilai_atribut){
+						return o
+					}
+				});
+				s = data2.length;
+				s1 = hitungS1(data2);
+				s2 = s-s1;
+				entrophy_s = hitungEntrohy([s1/s, s2/s])
+				gain += s/s_parent * entrophy_s
+				html_table2 += "<tr>"+
+				"<td></td>"+
+				"<td></td>"+
+				"<td>"+nilai_atribut+"</td>"+
+				"<td>"+s+"</td>"+
+				"<td>"+s1+"</td>"+
+				"<td>"+s2+"</td>"+
+				"<td>"+entrophy_s+"</td>"+
+				"<td></td>"+
+				"</tr>";
+			}
+			gain = entrophy_parent - gain
+			i.gain = gain
+			html_table += "<tr>"+
+			"<td></td>"+
+			"<td>"+i.nama_bebas+"</td>"+
+			"<td></td>"+
+			"<td></td>"+
+			"<td></td>"+
+			"<td></td>"+
+			"<td></td>"+
+			"<td>"+gain+"</td>"+
+			"</tr>"+html_table2;
+		}
+		var sortedDesc = _.sortBy(atribut, function(o){
+			return o.gain;
+		}).reverse();
+		_.pullAt(sortedDesc, 0)
+		var template = setTemplate(html_table);
+		$('body').append(template)
+		$('body').append(atribut)
+	</script>
+</body>
+</html>
